@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Carlito";
+  src: url("/fonts/Carlito-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Carlito";
+  src: url("/fonts/Carlito-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme inline {
+  --color-primary: #492A34;
+  --color-primary-hover: #5A3542;
+  --color-secondary: #B99D86;
+  --color-background: #fdfcfa;
+  --color-foreground: #221B16;
+  --color-card: #FFFFFF;
+  --color-border: #E8DCCB;
+  --color-input: #FDFBF7;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #8A1225;
+  --font-sans: "Carlito", sans-serif;
+  --radius: 12px;
+  --shadow-sm: 0 1px 2px 0 rgb(34 27 22 / 0.05);
+  --shadow: 0 4px 6px -1px rgb(34 27 22 / 0.08), 0 2px 4px -2px rgb(34 27 22 / 0.08);
+  --shadow-lg: 0 10px 15px -3px rgb(34 27 22 / 0.1), 0 4px 6px -4px rgb(34 27 22 / 0.1);
+}
+
+:root {
+  --primary: #492A34;
+  --primary-hover: #5A3542;
+  --secondary: #B99D86;
+  --background: #fdfcfa;
+  --foreground: #221B16;
+  --card: #FFFFFF;
+  --border: #E8DCCB;
+  --input: #FDFBF7;
+  --ring: rgba(73, 42, 52, 0.2);
+  --success: #10B981;
+  --warning: #F59E0B;
+  --error: #8A1225;
+  --radius: 12px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-family: "Carlito", sans-serif;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+body {
+  min-height: 100dvh;
+  overscroll-behavior: none;
+}
