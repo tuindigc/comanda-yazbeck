@@ -1,0 +1,213 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model UserProfile {
+  id             String   @id
+  email          String   @unique
+  name           String?
+  phone          String?
+  role           String   @default("USER")
+  isActive       Boolean  @default(true)
+  activationCode String?
+  activatedAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  userPrices       UserPrice[]
+  purchaseSessions PurchaseSession[]
+}
+
+model ActivationCode {
+  id        Int       @id @default(autoincrement())
+  code      String    @unique
+  isUsed    Boolean   @default(false)
+  usedBy    String?
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model Provider {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  logoUrl  String?
+  isActive Boolean   @default(true)
+  order    Int       @default(0)
+  products Product[]
+}
+
+model Material {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  iconUrl  String?
+  order    Int       @default(0)
+  products Product[]
+}
+
+model Color {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  hex      String?
+  order    Int       @default(0)
+  imageUrl String?
+  products Product[]
+}
+
+model Brand {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  order    Int       @default(0)
+  products Product[]
+}
+
+model Gender {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  iconUrl  String?
+  order    Int       @default(0)
+  products Product[]
+}
+
+model Cut {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  order    Int       @default(0)
+  products Product[]
+}
+
+model Weight {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  order    Int       @default(0)
+  variants Variant[]
+}
+
+model SizeGroup {
+  id      Int            @id @default(autoincrement())
+  name    String         @unique
+  order   Int            @default(0)
+  options SizeCategory[]
+}
+
+model SizeCategory {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  order       Int       @default(0)
+  sizeGroup   SizeGroup @relation(fields: [sizeGroupId], references: [id])
+  sizeGroupId Int
+  @@index([sizeGroupId])
+}
+
+model Product {
+  id          Int     @id @default(autoincrement())
+  name        String
+  type        String  @default("CLOTHING")
+  provider    Provider? @relation(fields: [providerId], references: [id])
+  providerId  Int?
+  material    Material? @relation(fields: [materialId], references: [id])
+  materialId  Int?
+  color       Color?    @relation(fields: [colorId], references: [id])
+  colorId     Int?
+  brand       Brand?    @relation(fields: [brandId], references: [id])
+  brandId     Int?
+  gender      Gender?   @relation(fields: [genderId], references: [id])
+  genderId    Int?
+  cut         Cut?      @relation(fields: [cutId], references: [id])
+  cutId       Int?
+  imageUrl    String?
+  description String?
+  catalogCode String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  variants       Variant[]
+  yazbeckMapping YazbeckMapping?
+  @@unique([name, materialId, colorId, genderId, cutId, brandId])
+  @@index([providerId])
+  @@index([materialId])
+  @@index([colorId])
+  @@index([brandId])
+  @@index([type])
+}
+
+model Variant {
+  id        Int     @id @default(autoincrement())
+  size      String
+  weight    Weight? @relation(fields: [weightId], references: [id])
+  weightId  Int?
+  basePrice Float   @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId Int
+  userPrices    UserPrice[]
+  purchaseItems PurchaseItem[]
+  @@unique([productId, size, weightId])
+  @@index([productId])
+}
+
+model UserPrice {
+  id          Int    @id @default(autoincrement())
+  customPrice Float
+  user      UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  variant   Variant     @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  variantId Int
+  @@unique([userId, variantId])
+  @@index([userId])
+}
+
+model YazbeckMapping {
+  id           Int     @id @default(autoincrement())
+  productId    Int     @unique
+  product      Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sheetName    String
+  estilo       String
+  yazbeckColor String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PurchaseSession {
+  id     Int    @id @default(autoincrement())
+  name   String
+  status String @default("BORRADOR")
+  user   UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  confirmedAt DateTime?
+  receivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  items              PurchaseItem[]
+  verificationResults VerificationResult[]
+  @@index([userId])
+  @@index([status])
+}
+
+model PurchaseItem {
+  id       Int   @id @default(autoincrement())
+  quantity Int
+  unitCost Float @default(0)
+  session   PurchaseSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId Int
+  variant   Variant         @relation(fields: [variantId], references: [id])
+  variantId Int
+  createdAt DateTime @default(now())
+  @@unique([sessionId, variantId])
+  @@index([sessionId])
+}
+
+model VerificationResult {
+  id               Int    @id @default(autoincrement())
+  pdfFileName      String
+  totalMatches     Int    @default(0)
+  totalDifferences Int    @default(0)
+  details          Json   @default("[]")
+  session   PurchaseSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId Int
+  createdAt DateTime @default(now())
+  @@index([sessionId])
+}
