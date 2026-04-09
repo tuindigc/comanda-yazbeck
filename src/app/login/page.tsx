@@ -8,16 +8,25 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleLogin(formData: FormData) {
+  async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     setLoading(true);
     setError("");
-    const result = await signIn(formData.get("email") as string, formData.get("password") as string);
-    if (result?.error) { setError(result.error); setLoading(false); }
+    const formData = new FormData(e.currentTarget);
+    try {
+      const result = await signIn(formData.get("email") as string, formData.get("password") as string);
+      if (result?.error) { setError(result.error); setLoading(false); }
+    } catch (err) {
+      // redirect() throws NEXT_REDIRECT — that's expected on success
+      throw err;
+    }
   }
 
-  async function handleActivate(formData: FormData) {
+  async function handleActivate(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     setLoading(true);
     setError("");
+    const formData = new FormData(e.currentTarget);
     const result = await activateAndSignUp(
       formData.get("code") as string,
       formData.get("email") as string,
@@ -41,7 +50,7 @@ export default function LoginPage() {
         {error && <div className="rounded-[12px] bg-red-50 p-3 text-sm text-error">{error}</div>}
 
         {mode === "login" ? (
-          <form action={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-4">
             <input name="email" type="email" placeholder="Email" required className="w-full rounded-[12px] border border-border bg-input px-4 py-3 text-foreground outline-none focus:ring-2 focus:ring-primary/20" />
             <input name="password" type="password" placeholder="Contraseña" required className="w-full rounded-[12px] border border-border bg-input px-4 py-3 text-foreground outline-none focus:ring-2 focus:ring-primary/20" />
             <button type="submit" disabled={loading} className="w-full rounded-[12px] bg-primary py-3 font-bold text-white transition-colors hover:bg-primary-hover disabled:opacity-50">
@@ -49,7 +58,7 @@ export default function LoginPage() {
             </button>
           </form>
         ) : (
-          <form action={handleActivate} className="space-y-4">
+          <form onSubmit={handleActivate} className="space-y-4">
             <input name="code" type="text" placeholder="Código de activación" required className="w-full rounded-[12px] border border-border bg-input px-4 py-3 text-center text-lg font-bold tracking-widest text-foreground outline-none focus:ring-2 focus:ring-primary/20" />
             <input name="name" type="text" placeholder="Tu nombre" required className="w-full rounded-[12px] border border-border bg-input px-4 py-3 text-foreground outline-none focus:ring-2 focus:ring-primary/20" />
             <input name="email" type="email" placeholder="Email" required className="w-full rounded-[12px] border border-border bg-input px-4 py-3 text-foreground outline-none focus:ring-2 focus:ring-primary/20" />

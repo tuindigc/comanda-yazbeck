@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "./authActions";
 
 export async function getProducts(providerId: number, filters?: {
   search?: string;
@@ -51,15 +52,19 @@ export async function getFilterOptions(providerId: number) {
   return { materials, colors, genders, cuts, sizeGroups, weights };
 }
 
-export async function getUserPrices(userId: string) {
-  const prices = await prisma.userPrice.findMany({ where: { userId } });
+export async function getUserPrices() {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Not authenticated");
+  const prices = await prisma.userPrice.findMany({ where: { userId: user.id } });
   return new Map(prices.map((p) => [p.variantId, p.customPrice]));
 }
 
-export async function saveUserPrice(userId: string, variantId: number, customPrice: number) {
+export async function saveUserPrice(variantId: number, customPrice: number) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Not authenticated");
   await prisma.userPrice.upsert({
-    where: { userId_variantId: { userId, variantId } },
+    where: { userId_variantId: { userId: user.id, variantId } },
     update: { customPrice },
-    create: { userId, variantId, customPrice },
+    create: { userId: user.id, variantId, customPrice },
   });
 }

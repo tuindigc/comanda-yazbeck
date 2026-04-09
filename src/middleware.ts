@@ -30,8 +30,19 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/proveedores", request.url));
   }
   if (isAdminPage && user) {
-    const role = user.user_metadata?.role || "USER";
-    if (role !== "ADMIN") {
+    // Check admin role from database, not JWT metadata
+    const profileRes = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/UserProfile?id=eq.${user.id}&select=role,isActive`,
+      {
+        headers: {
+          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`,
+        },
+      }
+    );
+    const profiles = await profileRes.json();
+    const profile = profiles?.[0];
+    if (!profile || !profile.isActive || profile.role !== "ADMIN") {
       return NextResponse.redirect(new URL("/proveedores", request.url));
     }
   }

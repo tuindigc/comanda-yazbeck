@@ -39,6 +39,8 @@ export async function getSession(id: number) {
 export async function confirmSession(id: number) {
   const user = await getCurrentUser();
   if (!user) throw new Error("Not authenticated");
+  const session = await prisma.purchaseSession.findFirst({ where: { id, userId: user.id } });
+  if (!session) throw new Error("Session not found");
   await prisma.purchaseSession.update({ where: { id }, data: { status: "CONFIRMADO", confirmedAt: new Date() } });
   revalidatePath("/pedido");
 }
@@ -46,6 +48,8 @@ export async function confirmSession(id: number) {
 export async function markReceived(id: number) {
   const user = await getCurrentUser();
   if (!user) throw new Error("Not authenticated");
+  const session = await prisma.purchaseSession.findFirst({ where: { id, userId: user.id } });
+  if (!session) throw new Error("Session not found");
   await prisma.purchaseSession.update({ where: { id }, data: { status: "RECIBIDO", receivedAt: new Date() } });
   revalidatePath("/pedido");
   revalidatePath("/bitacora");
@@ -54,6 +58,7 @@ export async function markReceived(id: number) {
 export async function deleteSession(id: number) {
   const user = await getCurrentUser();
   if (!user) throw new Error("Not authenticated");
-  await prisma.purchaseSession.delete({ where: { id } });
+  const deleted = await prisma.purchaseSession.deleteMany({ where: { id, userId: user.id } });
+  if (deleted.count === 0) throw new Error("Session not found");
   revalidatePath("/pedido");
 }

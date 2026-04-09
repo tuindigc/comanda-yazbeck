@@ -13,7 +13,8 @@ async function requireAdmin() {
 
 export async function generateCodes(count: number) {
   await requireAdmin();
-  const codes = Array.from({ length: count }, () => crypto.randomBytes(4).toString("hex").toUpperCase());
+  const safeCount = Math.min(Math.max(1, Math.floor(count)), 50);
+  const codes = Array.from({ length: safeCount }, () => crypto.randomBytes(4).toString("hex").toUpperCase());
   await prisma.activationCode.createMany({ data: codes.map((code) => ({ code })) });
   revalidatePath("/admin/codigos");
   return codes;

@@ -17,6 +17,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Falta archivo PDF o sessionId" }, { status: 400 });
   }
 
+  const MAX_PDF_SIZE = 10 * 1024 * 1024; // 10 MB
+  if (pdf.size > MAX_PDF_SIZE) {
+    return NextResponse.json({ error: "PDF demasiado grande (max 10MB)" }, { status: 413 });
+  }
+
   // Get session items
   const session = await prisma.purchaseSession.findFirst({
     where: { id: Number(sessionId), userId: user.id },

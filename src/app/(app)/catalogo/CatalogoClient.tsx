@@ -37,6 +37,9 @@ interface CatalogoClientProps {
 
 export default function CatalogoClient({ initialProducts, filterOptions, providerId, userId }: CatalogoClientProps) {
   const { items, totalPieces, totalCost, increment, decrement, setQuantity } = useOrder();
+  const orderQuantities = new Map<number, number>(
+    Array.from(items.entries()).map(([id, item]) => [id, item.quantity])
+  );
 
   const [filters, setFilters] = useState({
     search: "",
@@ -101,7 +104,7 @@ export default function CatalogoClient({ initialProducts, filterOptions, provide
           <ProductCard
             key={product.id}
             product={product}
-            orderQuantities={items}
+            orderQuantities={orderQuantities}
             onIncrement={(variantId) => {
               const variant = product.variants.find((v) => v.id === variantId)!;
               increment(variantId, makeProductInfo(product, variant));

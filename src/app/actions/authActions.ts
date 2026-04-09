@@ -5,27 +5,43 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
 export async function activateAndSignUp(code: string, email: string, password: string, name: string) {
-  const activationCode = await prisma.activationCode.findUnique({ where: { code } });
-  if (!activationCode || activationCode.isUsed) {
+  if (!code || !email || !password || !name) {
+    return { error: "Todos los campos son requeridos" };
+  }
+  if (password.length < 6) {
+    return { error: "La contraseña debe tener al menos 6 caracteres" };
+  }
+
+  // Atomic check-and-claim: prevents race condition with concurrent requests
+  const claimed = await prisma.activationCode.updateMany({
+    where: { code, isUsed: false },
+    data: { isUsed: true, usedAt: new Date() },
+  });
+  if (claimed.count === 0) {
     return { error: "Código de activación inválido o ya utilizado" };
   }
 
   const supabase = await createServerSupabase();
   const { data, error } = await supabase.auth.signUp({
     email, password,
-    options: { data: { name, role: "USER" } },
+    options: { data: { name } },
   });
 
-  if (error) return { error: error.message };
-  if (!data.user) return { error: "Error al crear cuenta" };
+  if (error) {
+    // Rollback: un-claim the code if signup fails
+    await prisma.activationCode.updateMany({ where: { code }, data: { isUsed: false, usedBy: null, usedAt: null } });
+    return { error: error.message };
+  }
+  if (!data.user) {
+    await prisma.activationCode.updateMany({ where: { code }, data: { isUsed: false, usedBy: null, usedAt: null } });
+    return { error: "Error al crear cuenta" };
+  }
+
+  // Link code to user and create profile
+  await prisma.activationCode.updateMany({ where: { code }, data: { usedBy: data.user.id } });
 
   await prisma.userProfile.create({
     data: { id: data.user.id, email, name, activationCode: code, activatedAt: new Date() },
-  });
-
-  await prisma.activationCode.update({
-    where: { code },
-    data: { isUsed: true, usedBy: data.user.id, usedAt: new Date() },
   });
 
   return { success: true };
@@ -49,5 +65,6 @@ export async function getCurrentUser() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
   const profile = await prisma.userProfile.findUnique({ where: { id: user.id } });
+  if (!profile || !profile.isActive) return null;
   return profile;
 }
